@@ -44,6 +44,7 @@ func main() {
 	bot.HandleMessage("/play", app.playHandler)
 	bot.HandleMessage("/score", app.scoreHandler)
 	bot.HandleMessage("/reset", app.resetHandler)
+	bot.HandleMessage("", app.defaultHandler)
 	bot.HandleCallback(app.callbackHandler)
 	log.Fatal(bot.Start())
 }

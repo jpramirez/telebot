@@ -2,7 +2,14 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"strings"
 
+	"github.com/tj/go-dropbox"
+	"github.com/tj/go-dropy"
 	"github.com/yanzay/tbot/v2"
 )
 
@@ -37,4 +44,63 @@ func (a *application) callbackHandler(cq *tbot.CallbackQuery) {
 	msg := a.draw(humanMove)
 	a.client.DeleteMessage(cq.Message.Chat.ID, cq.Message.MessageID)
 	a.client.SendMessage(cq.Message.Chat.ID, msg)
+}
+
+// Default handler
+func (a *application) defaultHandler(m *tbot.Message) {
+	msg := fmt.Sprintf("We are going to log that in")
+
+	if m.Photo != nil {
+		photo, err := a.client.GetFile(m.Photo[0].FileID)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		url := a.client.FileURL(photo)
+		resp, err := http.Get(url)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		defer resp.Body.Close()
+		out, err := os.Create(m.Document.FileName)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		defer out.Close()
+		io.Copy(out, resp.Body)
+		a.dropboxUpload(m.Document.FileName)
+
+	} else if m.Audio != nil {
+		audio, err := a.client.GetFile(m.Audio.FileID)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		url := a.client.FileURL(audio)
+		resp, err := http.Get(url)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		defer resp.Body.Close()
+		out, err := os.Create(m.Document.FileName)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		defer out.Close()
+		io.Copy(out, resp.Body)
+	}
+
+	a.client.SendMessage(m.Chat.ID, msg)
+
+}
+
+func (a *application) dropboxUpload(filename string) {
+	token := os.Getenv("DROPBOX_ACCESS_TOKEN")
+	client := dropy.New(dropbox.New(dropbox.NewConfig(token)))
+
+	client.Upload(filename, strings.NewReader(filename))
 }
