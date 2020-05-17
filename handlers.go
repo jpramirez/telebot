@@ -49,6 +49,7 @@ func (a *application) callbackHandler(cq *tbot.CallbackQuery) {
 // Default handler
 func (a *application) defaultHandler(m *tbot.Message) {
 	msg := fmt.Sprintf("We are going to log that in")
+	a.client.SendMessage(m.Chat.ID, msg)
 
 	if m.Photo != nil {
 		photo, err := a.client.GetFile(m.Photo[0].FileID)
@@ -93,8 +94,6 @@ func (a *application) defaultHandler(m *tbot.Message) {
 		defer out.Close()
 		io.Copy(out, resp.Body)
 	}
-
-	a.client.SendMessage(m.Chat.ID, msg)
 
 }
 
